@@ -176,18 +176,9 @@ export default function Historique() {
           color="error"
           variant="contained"
           sx={{
-            // Dark mode: white when no selection, red when has selection
-            bgcolor: (theme) => theme.palette.mode === 'dark'
-              ? (selected.length > 0 ? theme.palette.error.main : '#ffffff')
-              : undefined,
-            color: (theme) => theme.palette.mode === 'dark'
-              ? (selected.length > 0 ? theme.palette.error.contrastText : '#000000')
-              : undefined,
-            '&:hover': {
-              bgcolor: (theme) => theme.palette.mode === 'dark'
-                ? (selected.length > 0 ? theme.palette.error.dark : '#f0f0f0')
-                : undefined,
-            },
+            bgcolor: (theme) => selected.length > 0 ? theme.palette.error.main : '#000000',
+            color: '#ffffff',
+            '&:hover': (theme) => ({ bgcolor: selected.length > 0 ? theme.palette.error.dark : '#111111' }),
           }}
         >
           Annuler sélection
@@ -217,13 +208,9 @@ export default function Historique() {
                   onChange={toggleAll}
                   color="default"
                   sx={{
-                    color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                    '&.Mui-checked': {
-                      color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                    },
-                    '&.MuiCheckbox-indeterminate': {
-                      color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                    },
+                    color: '#000000',
+                    '&.Mui-checked': { color: '#000000' },
+                    '&.MuiCheckbox-indeterminate': { color: '#000000' },
                   }}
                 />
               </TableCell>
@@ -239,7 +226,9 @@ export default function Historique() {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={9}>Chargement...</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={9}>Chargement...</TableCell>
+              </TableRow>
             ) : filtered.length > 0 ? (
               filtered.map((row, idx) => {
                 const dateStr = new Date(row.date || row.createdAt).toLocaleString();
@@ -256,10 +245,8 @@ export default function Historique() {
                         checked={isSelected(row._id)}
                         onChange={() => toggleOne(row._id)}
                         sx={{
-                          color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                          '&.Mui-checked': {
-                            color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                          },
+                          color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                          '&.Mui-checked': { color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000' },
                         }}
                       />
                     </TableCell>
@@ -276,27 +263,22 @@ export default function Historique() {
                         variant="contained"
                         disabled={row.status === 'canceled'}
                         onClick={() => cancelOne(row._id)}
-                        sx={{
-                          bgcolor: (theme) => theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.grey[500],
-                          color: '#ffffff',
-                          '&:hover': (theme) => ({
-                            bgcolor: theme.palette.mode === 'dark' ? theme.palette.grey[700] : theme.palette.grey[600],
-                          }),
-                        }}
+                        sx={{ bgcolor: '#ffffff', color: '#000000', '&:hover': { bgcolor: '#f0f0f0' } }}
                       >Annuler</Button>
                     </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={9} align="center">Aucune transaction trouvée</TableCell>
               </TableRow>
-            );
-          })
-        ) : (
-          <TableRow>
-            <TableCell colSpan={9} align="center">Aucune transaction trouvée</TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
-  </TableContainer>
-  <ScrollTopButton />
+            )
+          }
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <ScrollTopButton />
     </Box>
-  );
-}
+    );
+  }

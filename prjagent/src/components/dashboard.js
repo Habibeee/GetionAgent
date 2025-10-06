@@ -15,10 +15,11 @@ import {
   Chip,
   TextField,
   Button,
+  Checkbox,
 } from "@mui/material";
 import CreateUserDialog from "./CreateUserDialog";
 import { Snackbar, Alert } from "@mui/material";
-import { apiGet, withAuth } from "../services/api";
+import { apiGet, apiPost, withAuth } from "../services/api";
 import { getToken } from "../api/client";
 
 // Helper to format the tiles from fetched stats
@@ -42,6 +43,7 @@ function Dashboard() {
   const [txs, setTxs] = useState([]);
   const [txsError, setTxsError] = useState("");
   const [txsLoading, setTxsLoading] = useState(false);
+  const [selected, setSelected] = useState([]); // selected transaction IDs
 
   const loadStats = async () => {
     try {
@@ -101,6 +103,41 @@ function Dashboard() {
       statusStr.toLowerCase().includes(q)
     );
   });
+
+  // Selection helpers
+  const isSelected = (id) => selected.includes(id);
+  const toggleOne = (id) => setSelected((prev) => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleAll = () => {
+    const ids = filteredTransactions.map((t) => t._id || t.id).filter(Boolean);
+    const allSelected = ids.length > 0 && ids.every((id) => selected.includes(id));
+    setSelected(allSelected ? selected.filter((id) => !ids.includes(id)) : Array.from(new Set([...selected, ...ids])));
+  };
+
+  // Delete actions (cancel transactions)
+  const cancelOne = async (id) => {
+    try {
+      const token = getToken();
+      if (!token) throw new Error('Veuillez vous connecter');
+      await apiPost('/transactions/cancel', { id }, { headers: withAuth(token) });
+      setTxs((prev) => prev.map((x) => (x._id || x.id) === id ? { ...x, status: 'canceled' } : x));
+      setSelected((prev) => prev.filter(x => x !== id));
+    } catch (e) {
+      setTxsError(e.message || "Erreur d'annulation");
+    }
+  };
+
+  const bulkCancel = async () => {
+    if (!selected.length) return;
+    try {
+      const token = getToken();
+      if (!token) throw new Error('Veuillez vous connecter');
+      await apiPost('/transactions/bulk-cancel', { ids: selected }, { headers: withAuth(token) });
+      setTxs((prev) => prev.map((x) => selected.includes(x._id || x.id) ? { ...x, status: 'canceled' } : x));
+      setSelected([]);
+    } catch (e) {
+      setTxsError(e.message || "Erreur d'annulation en masse");
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -170,11 +207,25 @@ function Dashboard() {
         />
       </Box>
 
-      {/* Tableau des transactions */}
+      {/* Actions and tableau des transactions */}
       <Typography variant="h6" gutterBottom>
         Transactions Récentes
       </Typography>
       {txsError && (<Alert severity="error" sx={{ mb: 2 }}>{txsError}</Alert>)}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+        <Button
+          onClick={bulkCancel}
+          disabled={selected.length === 0}
+          variant="contained"
+          sx={{
+            bgcolor: (theme) => selected.length > 0 ? theme.palette.error.main : '#000000',
+            color: '#ffffff',
+            '&:hover': (theme) => ({ bgcolor: selected.length > 0 ? theme.palette.error.dark : '#111111' }),
+          }}
+        >
+          Supprimer sélection
+        </Button>
+      </Box>
       <TableContainer component={Paper}>
         <Table>
           <TableHead sx={{
@@ -185,21 +236,35 @@ function Dashboard() {
             }
           }}>
             <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  color="default"
+                  indeterminate={filteredTransactions.some((t) => isSelected(t._id || t.id)) && !filteredTransactions.every((t) => isSelected(t._id || t.id))}
+                  checked={filteredTransactions.length > 0 && filteredTransactions.every((t) => isSelected(t._id || t.id))}
+                  onChange={toggleAll}
+                  sx={{
+                    color: '#000000',
+                    '&.Mui-checked': { color: '#000000' },
+                    '&.MuiCheckbox-indeterminate': { color: '#000000' },
+                  }}
+                />
+              </TableCell>
               <TableCell>ID</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Montant</TableCell>
               <TableCell>Statut</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {txsLoading ? (
               <TableRow>
-                <TableCell colSpan={5}>Chargement...</TableCell>
+                <TableCell colSpan={6}>Chargement...</TableCell>
               </TableRow>
             ) : filteredTransactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5}>Aucune transaction récente</TableCell>
+                <TableCell colSpan={6}>Aucune transaction récente</TableCell>
               </TableRow>
             ) : (
               filteredTransactions.map((row) => {
@@ -210,12 +275,33 @@ function Dashboard() {
                 const statut = row.status || 'Validée';
                 return (
                   <TableRow key={id}>
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        color="default"
+                        checked={isSelected(id)}
+                        onChange={() => toggleOne(id)}
+                        sx={{
+                          color: '#ffffff',
+                          '&.Mui-checked': { color: '#ffffff' },
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>{id}</TableCell>
                     <TableCell>{new Date(date).toLocaleString()}</TableCell>
                     <TableCell>{type}</TableCell>
                     <TableCell>{montant}</TableCell>
                     <TableCell>
                       <Chip label={statut} color={statut === 'canceled' ? 'warning' : 'success'} size="small" />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => cancelOne(id)}
+                        sx={{ bgcolor: '#000000', color: '#ffffff', '&:hover': { bgcolor: '#111111' } }}
+                      >
+                        Supprimer
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );

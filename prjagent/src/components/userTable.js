@@ -13,8 +13,13 @@ import { getToken, setToken } from "../api/client";
 import EditUserDialog from "./EditUserDialog";
 import ScrollTopButton from "./ScrollTopButton";
 
-const API_URL = "http://localhost:5000/users"; // backend users endpoint
-const TX_API = "http://localhost:5000/transactions";
+// Use env-based API base URL for deployed environments (Vercel) with localhost fallback
+const API_BASE =
+  (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL))
+  || (import.meta?.env?.VITE_API_URL)
+  || 'http://localhost:5000';
+const API_URL = `${API_BASE}/users`; // backend users endpoint
+const TX_API = `${API_BASE}/transactions`;
 
 const ActionMenu = ({ user, deleteUser, toggleBlock, onEdit, onShowHistory }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -29,6 +34,7 @@ const ActionMenu = ({ user, deleteUser, toggleBlock, onEdit, onShowHistory }) =>
         size="small"
         variant="outlined"
         onClick={handleClick}
+        sx={{ bgcolor: '#ffffff', color: '#000000', '&:hover': { bgcolor: '#f0f0f0' } }}
       >
         Actions
       </Button>
@@ -327,11 +333,11 @@ function UserTable({ refreshKey = 0 }) {
           disabled={selected.length === 0}
           onClick={openConfirmBulk}
           sx={{
-            bgcolor: (theme) => theme.palette.error.main,
-            color: (theme) => theme.palette.error.contrastText,
-            '&:hover': {
-              bgcolor: (theme) => theme.palette.error.dark,
-            },
+            bgcolor: (theme) => selected.length > 0 ? theme.palette.error.main : '#000000',
+            color: '#ffffff',
+            '&:hover': (theme) => ({
+              bgcolor: selected.length > 0 ? theme.palette.error.dark : '#111111',
+            }),
           }}
         >
           Supprimer sélection
@@ -356,13 +362,9 @@ function UserTable({ refreshKey = 0 }) {
                 checked={paginatedUsers.length > 0 && paginatedUsers.every(u => selected.includes(u._id))}
                 onChange={toggleAllVisible}
                 sx={{
-                  color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                  '&.Mui-checked': {
-                    color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                  },
-                  '&.MuiCheckbox-indeterminate': {
-                    color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                  },
+                  color: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#000000',
+                  '&.Mui-checked': { color: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#000000' },
+                  '&.MuiCheckbox-indeterminate': { color: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#000000' },
                 }}
               />
             </TableCell>
@@ -384,10 +386,8 @@ function UserTable({ refreshKey = 0 }) {
                   checked={isSelected(user._id)}
                   onChange={() => toggleOne(user._id)}
                   sx={{
-                    color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                    '&.Mui-checked': {
-                      color: (theme) => theme.palette.mode === 'dark' ? '#000000' : theme.palette.primary.main,
-                    },
+                    color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+                    '&.Mui-checked': { color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000' },
                   }}
                 />
               </TableCell>

@@ -1,7 +1,9 @@
 // App.js
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { Box } from "@mui/material";
+import { Box, CssBaseline, useMediaQuery } from "@mui/material";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import ColorModeContext from "./theme/ColorModeContext";
 import Header from "./components/header";
 import LoginPage from "./components/login";
 import SideMenu from "./components/sideMenu";
@@ -16,6 +18,43 @@ import DepotForm from "./components/depot";
 import UserTable from "./components/userTable";
 
 function App() {
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+  const [mode, setMode] = useState(() => {
+    try {
+      return localStorage.getItem('mode') || (prefersDarkMode ? 'dark' : 'light');
+    } catch {
+      return prefersDarkMode ? 'dark' : 'light';
+    }
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('mode', mode); } catch {}
+  }, [mode]);
+
+  const colorMode = useMemo(() => ({
+    mode,
+    toggleColorMode: () => setMode((prev) => (prev === 'light' ? 'dark' : 'light')),
+  }), [mode]);
+
+  const theme = useMemo(() => createTheme({
+    palette: { mode },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: mode === 'dark'
+            ? { backgroundColor: '#ffffff', color: '#000000', '&:hover': { backgroundColor: '#f0f0f0' } }
+            : { backgroundColor: '#000000', color: '#ffffff', '&:hover': { backgroundColor: '#111111' } },
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: mode === 'dark'
+            ? { color: '#000000', backgroundColor: '#ffffff1a' }
+            : { color: '#ffffff', backgroundColor: '#0000001a' },
+        },
+      },
+    },
+  }), [mode]);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     try {
       return localStorage.getItem("isLoggedIn") === "true" && !!getToken();
@@ -80,7 +119,10 @@ function App() {
   }, []);
 
   return (
-    <Router>
+    <ColorModeContext.Provider value={colorMode}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
       {isLoggedIn && (
         <>
           <Header onMenuClick={() => setDrawerOpen((prev) => !prev)} drawerOpen={drawerOpen} />
@@ -110,7 +152,9 @@ function App() {
           <Route path="*" element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />} />
         </Routes>
       </Box>
-    </Router>
+        </Router>
+      </ThemeProvider>
+    </ColorModeContext.Provider>
   );
 }
 
