@@ -217,17 +217,15 @@ function Dashboard() {
                 <TableCell colSpan={6}>Aucune transaction récente</TableCell>
               </TableRow>
             ) : (
-              filteredTransactions.map((row) => {
+              filteredTransactions.map((row, index) => {
                 const id = row._id || row.id;
                 const date = row.date || row.createdAt;
                 const type = row.type === 'deposit' ? 'Dépôt' : row.type;
                 const montant = `${row.amount} FCFA`;
                 const statut = row.status || 'Validée';
+                const rowKey = id || `${date || ''}-${type || ''}-${row.amount || ''}-${index}`;
                 return (
-                  <TableRow key={id}>
-                    <TableCell padding="checkbox">
-                     
-                    </TableCell>
+                  <TableRow key={rowKey}>
                     <TableCell>{id}</TableCell>
                     <TableCell>{new Date(date).toLocaleString()}</TableCell>
                     <TableCell>{type}</TableCell>

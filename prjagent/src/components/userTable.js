@@ -2,11 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Button, Menu, MenuItem, Typography, TextField, Paper, Box,
-  Grid, FormControl, InputLabel, Select, Checkbox, Toolbar, Tooltip, Stack, Alert,
+  Grid, FormControl, InputLabel, Select, Checkbox, Toolbar, Tooltip, Stack, Alert, Snackbar,
   Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, List, ListItem, ListItemText,
   TablePagination
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import BlockIcon from "@mui/icons-material/Block";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useNavigate } from "react-router-dom";
 import { getToken, setToken } from "../api/client";
@@ -20,7 +22,7 @@ const API_BASE = (
 const API_URL = `${API_BASE}/users`; // backend users endpoint
 const TX_API = `${API_BASE}/transactions`;
 
-const ActionMenu = ({ user, deleteUser, toggleBlock, onEdit, onShowHistory }) => {
+const ActionMenu = ({ user, deleteUser, onBlockToggle, onEdit, onShowHistory, selectedCount = 0 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const handleClick = (e) => setAnchorEl(e.currentTarget);
@@ -40,9 +42,13 @@ const ActionMenu = ({ user, deleteUser, toggleBlock, onEdit, onShowHistory }) =>
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem onClick={() => { onEdit?.(user); handleClose(); }}>Modifier</MenuItem>
         <MenuItem onClick={() => { deleteUser(user._id); handleClose(); }}>Supprimer</MenuItem>
-        <MenuItem onClick={() => { toggleBlock(user._id, !user.actif); handleClose(); }}>
-          {user.actif ? "Bloquer" : "Activer"}
-        </MenuItem>
+        {(() => { const willBlock = user.actif === true; return (
+          <MenuItem onClick={() => { onBlockToggle?.(user, willBlock); handleClose(); }}>
+            {selectedCount > 0 
+              ? (willBlock ? "Bloquer la sélection" : "Activer la sélection") 
+              : (willBlock ? "Bloquer" : "Activer")}
+          </MenuItem>
+        ); })()}
         {(String(user.type || 'client').toLowerCase() === 'distributeur') && (
           <MenuItem onClick={() => { onShowHistory?.(user); handleClose(); }}>Historique</MenuItem>
         )}
@@ -72,6 +78,13 @@ function UserTable({ refreshKey = 0 }) {
   const [txError, setTxError] = useState("");
   const [txList, setTxList] = useState([]);
   const [txAccount, setTxAccount] = useState("");
+  // Notifications
+  const [notice, setNotice] = useState("");
+  const [noticeOpen, setNoticeOpen] = useState(false);
+  // Bulk loading state
+  const [bulkBusy, setBulkBusy] = useState(false);
+  // Confirm bulk block/unblock via menu
+  const [confirmBulkBlock, setConfirmBulkBlock] = useState({ open: false, action: 'block' });
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
@@ -145,7 +158,7 @@ function UserTable({ refreshKey = 0 }) {
   const toggleBlock = async (id, block) => {
     try {
       const token = getToken();
-      await fetch(`${API_URL}/block/${id}`, {
+      const res = await fetch(`${API_URL}/block/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -155,13 +168,22 @@ function UserTable({ refreshKey = 0 }) {
           action: block ? "block" : "unblock",
         }),
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error || data?.message || 'Echec mise à jour statut';
+        throw new Error(msg);
+      }
       setUsers(prev =>
         prev.map(u =>
-          u._id === id ? { ...u, actif: !block ? true : false } : u
+          u._id === id ? { ...u, actif: !block } : u
         )
       );
+      setNotice(block ? "Utilisateur bloqué" : "Utilisateur activé");
+      setNoticeOpen(true);
     } catch (err) {
       console.error(err);
+      console.debug('toggleBlock failed for id=', id, 'block=', block);
+      setError(err.message || "Erreur lors de la mise à jour du statut");
     }
   };
 
@@ -211,22 +233,47 @@ function UserTable({ refreshKey = 0 }) {
     }
   };
 
-  const bulkBlock = async (block) => {
-    if (!selected.length) return;
+  const bulkBlock = async (block, idsOverride = []) => {
+    const ids = Array.isArray(idsOverride) && idsOverride.length ? idsOverride : selected;
+    if (!ids.length) return;
     try {
+      setBulkBusy(true);
       const token = getToken();
-      await fetch(`${API_URL}/bulk-block`, {
+      const res = await fetch(`${API_URL}/bulk-block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ids: selected, action: block ? 'block' : 'unblock' }),
+        body: JSON.stringify({ ids, action: block ? 'block' : 'unblock' }),
       });
-      setUsers(prev => prev.map(u => selected.includes(u._id) ? { ...u, actif: block ? false : true } : u));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error || data?.message || 'Echec mise à jour en masse';
+        throw new Error(msg);
+      }
+      setUsers(prev => prev.map(u => ids.includes(u._id) ? { ...u, actif: !block } : u));
       setSelected([]);
+      const count = Number(data?.modifiedCount ?? ids.length);
+      setNotice(block ? `${count} utilisateur(s) bloqué(s)` : `${count} utilisateur(s) activé(s)`);
+      setNoticeOpen(true);
     } catch (err) {
       console.error(err);
+      console.debug('bulkBlock failed for ids=', ids, 'block=', block);
+      setError(err.message || 'Erreur lors de la mise à jour en masse');
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  // When clicking Bloquer/Activer in the per-row Actions menu:
+  // - If there is a selection, apply to all selected IDs
+  // - Otherwise, apply to the clicked user only
+  const onActionMenuBlockClick = (user, willBlock) => {
+    if (selected.length > 0) {
+      setConfirmBulkBlock({ open: true, action: willBlock ? 'block' : 'unblock' });
+    } else {
+      toggleBlock(user._id, willBlock);
     }
   };
 
@@ -298,7 +345,7 @@ function UserTable({ refreshKey = 0 }) {
         <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
       )}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <TextField
             label="Rechercher un utilisateur"
             variant="outlined"
@@ -308,7 +355,7 @@ function UserTable({ refreshKey = 0 }) {
             inputRef={searchRef}
           />
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <FormControl fullWidth>
             <InputLabel id="filter-type-label">Type</InputLabel>
             <Select
@@ -329,7 +376,7 @@ function UserTable({ refreshKey = 0 }) {
       <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mb: 1 }}>
         <Button
           variant="outlined"
-          disabled={selected.length === 0}
+          disabled={selected.length === 0 || bulkBusy}
           onClick={() => bulkBlock(true)}
           sx={{
             bgcolor: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#ffffff',
@@ -341,12 +388,15 @@ function UserTable({ refreshKey = 0 }) {
             }),
           }}
         >
+          <Box component="span" sx={{ display: 'inline-flex', width: 18, mr: 1, alignItems: 'center', justifyContent: 'center' }}>
+            {bulkBusy ? <CircularProgress size={16} /> : null}
+          </Box>
           Bloquer sélection
         </Button>
 
         <Button
           variant="outlined"
-          disabled={selected.length === 0}
+          disabled={selected.length === 0 || bulkBusy}
           onClick={() => bulkBlock(false)}
           sx={{
             bgcolor: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#ffffff',
@@ -358,12 +408,15 @@ function UserTable({ refreshKey = 0 }) {
             }),
           }}
         >
+          <Box component="span" sx={{ display: 'inline-flex', width: 18, mr: 1, alignItems: 'center', justifyContent: 'center' }}>
+            {bulkBusy ? <CircularProgress size={16} /> : null}
+          </Box>
           Activer sélection
         </Button>
 
         <Button
           variant="contained"
-          disabled={selected.length === 0}
+          disabled={selected.length === 0 || bulkBusy}
           onClick={openConfirmBulk}
           sx={{
             bgcolor: (theme) => selected.length > 0 ? theme.palette.error.main : '#000000',
@@ -373,6 +426,9 @@ function UserTable({ refreshKey = 0 }) {
             }),
           }}
         >
+          <Box component="span" sx={{ display: 'inline-flex', width: 18, mr: 1, alignItems: 'center', justifyContent: 'center' }}>
+            {bulkBusy ? <CircularProgress size={16} /> : null}
+          </Box>
           Supprimer sélection
         </Button>
       </Stack>
@@ -406,7 +462,8 @@ function UserTable({ refreshKey = 0 }) {
             <TableCell>Email</TableCell>
             <TableCell>Téléphone</TableCell>
             <TableCell>Type</TableCell>
-            {showAccountCol && <TableCell>N° Compte</TableCell>}
+            <TableCell align="center">Statut</TableCell>
+            <TableCell>{showAccountCol ? 'N° Compte' : ''}</TableCell>
             <TableCell align="center">Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -429,23 +486,29 @@ function UserTable({ refreshKey = 0 }) {
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.telephone}</TableCell>
               <TableCell>{user.type || 'client'}</TableCell>
-              {showAccountCol && (
-                <TableCell>{(user.type || 'client') === 'distributeur' ? (user.accountNumber || (`ACCT-${user.email}`)) : ''}</TableCell>
-              )}
+              <TableCell align="center">
+                {user.actif ? (
+                  <CheckCircleIcon sx={{ color: 'success.main' }} titleAccess="Actif" />
+                ) : (
+                  <BlockIcon sx={{ color: 'error.main' }} titleAccess="Bloqué" />
+                )}
+              </TableCell>
+              <TableCell>{(user.type || 'client') === 'distributeur' ? (user.accountNumber || (`ACCT-${user.email}`)) : ''}</TableCell>
               <TableCell align="center">
                 <ActionMenu
                   user={user}
                   deleteUser={(id) => setConfirmSingle({ open: true, id, label: `${user.prenom} ${user.nom}`.trim() })}
-                  toggleBlock={toggleBlock}
+                  onBlockToggle={onActionMenuBlockClick}
                   onEdit={(u) => { setEditUser(u); setEditOpen(true); }}
                   onShowHistory={(u) => openHistory(u)}
+                  selectedCount={selected.length}
                 />
               </TableCell>
             </TableRow>
           ))}
           {filteredUsers.length === 0 && (
             <TableRow>
-              <TableCell colSpan={showAccountCol ? 8 : 7} align="center">Aucun utilisateur trouvé</TableCell>
+              <TableCell colSpan={9} align="center">Aucun utilisateur trouvé</TableCell>
             </TableRow>
           )}
         </TableBody>
@@ -494,6 +557,29 @@ function UserTable({ refreshKey = 0 }) {
             }}
           >
             Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirm bulk block/unblock dialog (triggered from row menu when there is a selection) */}
+      <Dialog open={confirmBulkBlock.open} onClose={() => setConfirmBulkBlock({ open: false, action: 'block' })}>
+        <DialogTitle>Confirmation</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Voulez-vous {confirmBulkBlock.action === 'block' ? 'bloquer' : 'activer'} {selected.length} utilisateur(s) ?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmBulkBlock({ open: false, action: 'block' })}>Annuler</Button>
+          <Button
+            variant="contained"
+            color={confirmBulkBlock.action === 'block' ? 'warning' : 'success'}
+            onClick={async () => {
+              await bulkBlock(confirmBulkBlock.action === 'block', selected);
+              setConfirmBulkBlock({ open: false, action: 'block' });
+            }}
+          >
+            Confirmer
           </Button>
         </DialogActions>
       </Dialog>
@@ -563,6 +649,17 @@ function UserTable({ refreshKey = 0 }) {
         </DialogActions>
       </Dialog>
       <ScrollTopButton />
+      {/* Success notification */}
+      <Snackbar
+        open={noticeOpen}
+        autoHideDuration={3000}
+        onClose={() => setNoticeOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setNoticeOpen(false)} severity="success" sx={{ width: '100%' }}>
+          {notice}
+        </Alert>
+      </Snackbar>
     </TableContainer>
   );
 }

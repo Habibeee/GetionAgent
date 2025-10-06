@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import User from './models/User.js';
 import Account from './models/Account.js';
+import Agent from './models/Agent.js';
 
 function randDigits(len) {
   let s = '';
@@ -27,6 +28,7 @@ export async function runSeed() {
   // Seed specific requested agent: diallo23@gmail.com / passer1234
   const specialEmail = 'diallo23@gmail.com';
   const specialPwdHash = await bcrypt.hash('passer1234', 10);
+  // Ensure a User exists with these creds (already handled below)
   const existingSpecial = await User.findOne({ email: specialEmail });
   if (!existingSpecial) {
     const specialUser = await User.create({
@@ -48,6 +50,12 @@ export async function runSeed() {
     if (!acct) {
       await Account.create({ accountNumber, ownerEmail: existingSpecial.email, balance: 0 });
     }
+  }
+
+  // Ensure an Agent exists with the same creds so /agent/login works out of the box
+  const existingAgent = await Agent.findOne({ email: specialEmail });
+  if (!existingAgent) {
+    await Agent.create({ nom: 'Diallo', prenom: 'Bara', email: specialEmail, passwordHash: specialPwdHash });
   }
 
   for (let i = 0; i < baseUsers.length; i++) {
