@@ -182,30 +182,7 @@ function Dashboard() {
       )}
 
       {/* Champ de recherche */}
-      <Box sx={{ mb: 3, maxWidth: 400 }}>
-        <TextField
-          fullWidth
-          label="Rechercher une transaction"
-          variant="outlined"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? '#000000' : 'inherit',
-              color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit',
-              '& fieldset': {
-                borderColor: (theme) => theme.palette.mode === 'dark' ? '#444' : undefined,
-              },
-              '&:hover fieldset': {
-                borderColor: (theme) => theme.palette.mode === 'dark' ? '#666' : undefined,
-              },
-            },
-            '& .MuiInputLabel-root': {
-              color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : 'inherit',
-            },
-          }}
-        />
-      </Box>
+      
 
       {/* Actions and tableau des transactions */}
       <Typography variant="h6" gutterBottom>
@@ -249,15 +226,7 @@ function Dashboard() {
                 return (
                   <TableRow key={id}>
                     <TableCell padding="checkbox">
-                      <Checkbox
-                        color="default"
-                        checked={isSelected(id)}
-                        onChange={() => toggleOne(id)}
-                        sx={{
-                          color: '#ffffff',
-                          '&.Mui-checked': { color: '#ffffff' },
-                        }}
-                      />
+                     
                     </TableCell>
                     <TableCell>{id}</TableCell>
                     <TableCell>{new Date(date).toLocaleString()}</TableCell>

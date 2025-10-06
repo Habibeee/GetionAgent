@@ -332,13 +332,12 @@ function UserTable({ refreshKey = 0 }) {
           disabled={selected.length === 0}
           onClick={() => bulkBlock(true)}
           sx={{
-            borderColor: (theme) => selected.length > 0 ? theme.palette.warning.main : 'rgba(0,0,0,0.23)',
-            color: (theme) => selected.length > 0
-              ? theme.palette.warning.main
-              : (theme.palette.mode === 'dark' ? '#000000' : 'inherit'),
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#ffffff',
+            color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#000000',
             '&:hover': (theme) => ({
-              borderColor: selected.length > 0 ? theme.palette.warning.dark : 'rgba(0,0,0,0.23)',
-              backgroundColor: selected.length > 0 ? theme.palette.warning.light + '22' : 'transparent',
+              bgcolor: theme.palette.mode === 'dark' ? '#111111' : '#f0f0f0',
+              borderColor: theme.palette.mode === 'dark' ? '#111111' : '#111111',
             }),
           }}
         >
@@ -350,13 +349,12 @@ function UserTable({ refreshKey = 0 }) {
           disabled={selected.length === 0}
           onClick={() => bulkBlock(false)}
           sx={{
-            borderColor: (theme) => selected.length > 0 ? theme.palette.success.main : 'rgba(0,0,0,0.23)',
-            color: (theme) => selected.length > 0
-              ? theme.palette.success.main
-              : (theme.palette.mode === 'dark' ? '#000000' : 'inherit'),
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#ffffff',
+            color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? '#000000' : '#000000',
             '&:hover': (theme) => ({
-              borderColor: selected.length > 0 ? theme.palette.success.dark : 'rgba(0,0,0,0.23)',
-              backgroundColor: selected.length > 0 ? theme.palette.success.light + '22' : 'transparent',
+              bgcolor: theme.palette.mode === 'dark' ? '#111111' : '#f0f0f0',
+              borderColor: theme.palette.mode === 'dark' ? '#111111' : '#111111',
             }),
           }}
         >
