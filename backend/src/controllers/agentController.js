@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import Agent from '../models/Agent.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
@@ -55,12 +56,15 @@ export const login = async (req, res) => {
 export const getById = async (req, res) => {
   try {
     const { id } = req.params;
+    // Validate ObjectId to avoid CastError 500s
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ error: "ID d'agent invalide" });
+    }
     const agent = await Agent.findById(id).select('-passwordHash');
     if (!agent) return res.status(404).json({ error: 'Agent introuvable' });
     return res.json({ data: agent });
   } catch (err) {
-    console.error('get agent by id error:', err);
-    return res.status(500).json({ error: 
-      "Erreur lors de la récupération de l'agent" });
+    console.error('get agent by id error:', err?.message || err);
+    return res.status(500).json({ error: "Erreur lors de la récupération de l'agent" });
   }
 };
