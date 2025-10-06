@@ -14,21 +14,26 @@ const app = express();
 dotenv.config();
 const PORT = process.env.PORT || 5000;
 
-// CORS Configuration - Allow frontend from Vercel and local dev
+// CORS Configuration - Allow frontend from Vercel (all preview subdomains) and local dev
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
+  // Known deployed/preview URLs
   'https://gestion-agent.vercel.app',
   'https://gestion-agent-git-main-habibeees-projects.vercel.app',
-  'https://gestion-agent-rk6sfrvw0-habibeees-projects.vercel.app'
+  'https://gestion-agent-rk6sfrvw0-habibeees-projects.vercel.app',
+  // Newly reported deployed URL
+  'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app',
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    const isExplicit = allowedOrigins.includes(origin);
+    const isVercelPreview = /\.vercel\.app$/.test(origin) && origin.includes('habibeees-projects');
+    if (isExplicit || isVercelPreview) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -38,6 +43,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+// Ensure preflight is handled
+app.options('*', cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
