@@ -1,4 +1,4 @@
-const BASE_URL = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+const BASE_URL = process.env.REACT_APP_API_BASE || 'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app/';
 
 const jsonHeaders = () => ({ 'Content-Type': 'application/json' });
 

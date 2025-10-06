@@ -14,7 +14,7 @@ import {
 const API_BASE =
   (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL))
   || (import.meta?.env?.VITE_API_URL)
-  || 'http://localhost:5000';
+  || 'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app/';
 
 function toBase64(file) {
   return new Promise((resolve, reject) => {

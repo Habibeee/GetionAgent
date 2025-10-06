@@ -5,7 +5,7 @@
 
 const BASE_URL = (
   (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL)))
-  || 'http://localhost:5000';
+  || 'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app/';
 
 const TOKEN_KEY = 'agent_token';
 
