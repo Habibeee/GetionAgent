@@ -212,20 +212,6 @@ function Dashboard() {
         Transactions Récentes
       </Typography>
       {txsError && (<Alert severity="error" sx={{ mb: 2 }}>{txsError}</Alert>)}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-        <Button
-          onClick={bulkCancel}
-          disabled={selected.length === 0}
-          variant="contained"
-          sx={{
-            bgcolor: (theme) => selected.length > 0 ? theme.palette.error.main : '#000000',
-            color: '#ffffff',
-            '&:hover': (theme) => ({ bgcolor: selected.length > 0 ? theme.palette.error.dark : '#111111' }),
-          }}
-        >
-          Supprimer sélection
-        </Button>
-      </Box>
       <TableContainer component={Paper}>
         <Table>
           <TableHead sx={{
@@ -294,14 +280,7 @@ function Dashboard() {
                       <Chip label={statut} color={statut === 'canceled' ? 'warning' : 'success'} size="small" />
                     </TableCell>
                     <TableCell align="right">
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => cancelOne(id)}
-                        sx={{ bgcolor: '#000000', color: '#ffffff', '&:hover': { bgcolor: '#111111' } }}
-                      >
-                        Supprimer
-                      </Button>
+                      {/* Actions supprimées: suppression ligne désactivée */}
                     </TableCell>
                   </TableRow>
                 );

@@ -326,7 +326,39 @@ function UserTable({ refreshKey = 0 }) {
       </Grid>
 
       {/* Actions persistantes */}
-      <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
+      <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mb: 1 }}>
+        <Button
+          variant="outlined"
+          disabled={selected.length === 0}
+          onClick={() => bulkBlock(true)}
+          sx={{
+            borderColor: (theme) => selected.length > 0 ? theme.palette.warning.main : 'rgba(0,0,0,0.23)',
+            color: (theme) => selected.length > 0 ? theme.palette.warning.main : 'inherit',
+            '&:hover': (theme) => ({
+              borderColor: selected.length > 0 ? theme.palette.warning.dark : 'rgba(0,0,0,0.23)',
+              backgroundColor: selected.length > 0 ? theme.palette.warning.light + '22' : 'transparent',
+            }),
+          }}
+        >
+          Bloquer sélection
+        </Button>
+
+        <Button
+          variant="outlined"
+          disabled={selected.length === 0}
+          onClick={() => bulkBlock(false)}
+          sx={{
+            borderColor: (theme) => selected.length > 0 ? theme.palette.success.main : 'rgba(0,0,0,0.23)',
+            color: (theme) => selected.length > 0 ? theme.palette.success.main : 'inherit',
+            '&:hover': (theme) => ({
+              borderColor: selected.length > 0 ? theme.palette.success.dark : 'rgba(0,0,0,0.23)',
+              backgroundColor: selected.length > 0 ? theme.palette.success.light + '22' : 'transparent',
+            }),
+          }}
+        >
+          Activer sélection
+        </Button>
+
         <Button
           variant="contained"
           disabled={selected.length === 0}
