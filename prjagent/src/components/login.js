@@ -11,11 +11,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { setToken } from "../api/client";
 
-const API_BASE =
+const API_BASE = (
   process.env.REACT_APP_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  (import.meta?.env?.VITE_API_URL) ||
-  'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app/';
+  process.env.NEXT_PUBLIC_API_URL
+) || 'https://gestionagent.onrender.com';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("diallo23@gmail.com");

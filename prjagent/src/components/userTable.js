@@ -14,10 +14,9 @@ import EditUserDialog from "./EditUserDialog";
 import ScrollTopButton from "./ScrollTopButton";
 
 // Use env-based API base URL for deployed environments (Vercel) with localhost fallback
-const API_BASE =
+const API_BASE = (
   (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL))
-  || (import.meta?.env?.VITE_API_URL)
-  || 'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app/';
+) || 'https://gestionagent.onrender.com';
 const API_URL = `${API_BASE}/users`; // backend users endpoint
 const TX_API = `${API_BASE}/transactions`;
 

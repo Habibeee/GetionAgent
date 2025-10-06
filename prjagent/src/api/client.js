@@ -4,8 +4,8 @@
 // - Attaches Authorization header automatically when auth: true
 
 const BASE_URL = (
-  (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL)))
-  || 'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app/';
+  (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_API_URL || process.env.NEXT_PUBLIC_API_URL))
+) || 'https://gestionagent.onrender.com';
 
 const TOKEN_KEY = 'agent_token';
 

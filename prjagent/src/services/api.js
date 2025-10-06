@@ -1,4 +1,8 @@
-const BASE_URL = process.env.REACT_APP_API_BASE || 'https://gestion-agent-arjxkqthw-habibeees-projects.vercel.app/';
+const BASE_URL = (
+  process.env.REACT_APP_API_BASE ||
+  process.env.REACT_APP_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL
+) || 'https://gestionagent.onrender.com';
 
 const jsonHeaders = () => ({ 'Content-Type': 'application/json' });
 
