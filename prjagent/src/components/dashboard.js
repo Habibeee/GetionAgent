@@ -222,19 +222,6 @@ function Dashboard() {
             }
           }}>
             <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox
-                  color="default"
-                  indeterminate={filteredTransactions.some((t) => isSelected(t._id || t.id)) && !filteredTransactions.every((t) => isSelected(t._id || t.id))}
-                  checked={filteredTransactions.length > 0 && filteredTransactions.every((t) => isSelected(t._id || t.id))}
-                  onChange={toggleAll}
-                  sx={{
-                    color: '#000000',
-                    '&.Mui-checked': { color: '#000000' },
-                    '&.MuiCheckbox-indeterminate': { color: '#000000' },
-                  }}
-                />
-              </TableCell>
               <TableCell>ID</TableCell>
               <TableCell>Date</TableCell>
               <TableCell>Type</TableCell>
